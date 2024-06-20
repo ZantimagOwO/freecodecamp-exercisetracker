@@ -1,6 +1,4 @@
-const mongoose = require("mongoose");
-
-const Schema = mongoose.Schema;
+const { Schema, model, SchemaTypes } = require("mongoose");
 
 const userSchema = new Schema({
   username: {
@@ -8,11 +6,11 @@ const userSchema = new Schema({
     required: true,
   },
   excercise: {
-    type: [mongoose.SchemaTypes.ObjectId],
-    ref: 'User'
+    type: [SchemaTypes.ObjectId],
+    ref: "User",
     required: false,
   },
 });
 
-const User = model('User', userSchema);
-export default  User;
+const User = model("User", userSchema);
+module.exports = User;

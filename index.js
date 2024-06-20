@@ -9,8 +9,8 @@ mongoose.connect(process.env.MONGO_URI, {
   useUnifiedTopology: true,
 });
 
-const PersonService = require('./model/User');
-const ExcerciseService = require('./model/Exercise');
+const User = require('./model/User');
+const Excercise = require('./model/Exercise');
 
 app.use(cors())
 app.use(express.static('public'))
