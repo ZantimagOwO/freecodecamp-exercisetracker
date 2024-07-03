@@ -35,11 +35,12 @@ app.post("/api/users", function (req, res){
   })
 
   user.save(function (err, user){
-    if(err) console.log(err)
-      return res.json({
-    username: user.username,
-    _id: user._id
-  })
+    if(err) return res.json({error: err});
+
+    return res.json({
+      username: user.username,
+      _id: user._id
+    })  
   })
 })
 
@@ -52,13 +53,13 @@ app.get("/api/users", function(req, res){
 app.post("/api/users/:id/exercises", function (req, res) {
   let userId = req.params.id;
 
-  let excercise = new Exercise({
+  let exercise = new Exercise({
     description: req.body.description,
-    duration: req.body.duration,
+    duration: parseInt(req.body.duration),
     date: req.body.date ? new Date(req.body.date) : new Date(),
   });
 
-  if (!excercise.description || !excercise.duration) {
+  if (!exercise.description || !exercise.duration) {
     return res
       .status(400)
       .json({ error: "Description and duration are required" });
@@ -71,23 +72,25 @@ app.post("/api/users/:id/exercises", function (req, res) {
 
     console.log(user);
 
-    if (!user.log) {
-      user.log = [];
+    if (!user.exercise) {
+      user.exercise = [];
     }
 
-    console.log("Adding exercise: " + JSON.stringify(excercise))
+    console.log("Adding exercise: " + JSON.stringify(exercise));
 
-    user.exercise.push(excercise);
+    user.exercise.push(exercise);
 
     user.save(function (err, user) {
       if (err) {
-        console.log(err);
-        return res.json({ ex: excercise });
+        return res.json({ ex: exercise });
       } 
+
       return res.json({
         username: user.username,
         _id: user._id,
-        exercise: user.exercise,
+        description: exercise.description,
+        duration: exercise.duration,
+        date: exercise.date.toString().substring(0, 15),
       });
     });
   });
@@ -103,16 +106,22 @@ app.get("/api/users/:_id/logs", function (req, res){
   let to = req.params.to
   let limit = req.params.limit
 
-  User.findOne({ _id: userId, "exercise.date": { $gte: from, $lte: to } })
+  User.findOne({ _id: userId})
     .limit(limit)
     .exec((err, user) => {
       if (err) {
-        console.log(err);
         return res.json({ error: err });
-      } else {
-        const exercises = user.exercises;
-        // do something with the exercises
       }
+
+      if (!user) {
+        return res.json({ error: "User with id " + userId + " not found" });
+      }
+      return res.json({
+        username: user.username,
+        count: user.exercise.length,
+        _id: user._id,
+        log: user.exercise,
+      });
     });
 
 })
@@ -120,3 +129,5 @@ app.get("/api/users/:_id/logs", function (req, res){
 const listener = app.listen(process.env.PORT || 3000, () => {
   console.log('Your app is listening on port ' + listener.address().port)
 })
+
+// zantimadowos: 66852fb17af3231fd8c455d7
