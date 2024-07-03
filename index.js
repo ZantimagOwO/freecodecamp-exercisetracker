@@ -19,11 +19,12 @@ app.get('/', (req, res) => {
   res.sendFile(__dirname + '/views/index.html')
 });
 
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.urlencoded({ extended: false }));
 
 app.use("/", function (req, res, next) {
   console.log(req.method + " " + req.url);
-  console.log(req.body)
+  console.log("body: " + JSON.stringify(req.body))
+  console.log("params: " + JSON.stringify(req.query))
   next();
 });
 
@@ -70,8 +71,6 @@ app.post("/api/users/:id/exercises", function (req, res) {
       return res.json({ error: err });
     }
 
-    console.log(user);
-
     if (!user.exercise) {
       user.exercise = [];
     }
@@ -94,20 +93,41 @@ app.post("/api/users/:id/exercises", function (req, res) {
       });
     });
   });
-
-  console.log(user);
+  
 });
 
 app.get("/api/users/:_id/logs", function (req, res){
 
   let userId = req.params._id
 
-  let from = req.params.from
-  let to = req.params.to
-  let limit = req.params.limit
+  let from = req.query.from;
+  let fromDate;
+    
+  if(from){
+    fromDate = new Date(from)
+  } else {
+    fromDate = new Date(new Date("1970-01-01"))
+  }
+
+  let to = req.query.to;
+  let toDate;
+
+  if (to) {
+    toDate = new Date(to);
+  } else {
+    toDate = new Date(new Date().getTime() + 1000);
+  }
+
+
+  let limit = req.query.limit;
+
+  console.log({
+    fromDate,
+    toDate,
+    limit
+  })
 
   User.findOne({ _id: userId})
-    .limit(limit)
     .exec((err, user) => {
       if (err) {
         return res.json({ error: err });
@@ -116,11 +136,26 @@ app.get("/api/users/:_id/logs", function (req, res){
       if (!user) {
         return res.json({ error: "User with id " + userId + " not found" });
       }
+
+      let transformedLog = user.exercise
+      .filter(e => {
+        return e.date > fromDate && e.date < toDate;
+      })
+      .map((e) => ({
+        description: e.description,
+        duration: e.duration,
+        date: e.date.toString().substring(0, 15),
+      }))
+
+      if(limit){
+        transformedLog.length = limit
+      }
+
       return res.json({
         username: user.username,
         count: user.exercise.length,
         _id: user._id,
-        log: user.exercise,
+        log: transformedLog,
       });
     });
 
